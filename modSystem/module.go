@@ -2,30 +2,28 @@ package modSystem
 
 import (
 	"errors"
-	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 type EnvInfo struct {
 	OS          string // "windows", "linux", "darwin"
 	IsCodespace bool
 	MachineID   string
+	MachineInfo string
 }
 
 func Detect() (*EnvInfo, error) {
 	osName := runtime.GOOS
 	isCodespace := os.Getenv("CODESPACES") == "true"
 
-	var id string = ""
-	var err error = nil
-
-	if isCodespace {
-		id, err = getGithubMachineID()
-	} else {
-		id, err = getMachineID(osName)
+	info, err := getMachineInfo(osName)
+	if err != nil {
+		return nil, err
 	}
-
+	id, err := loadMachineID()
 	if err != nil {
 		return nil, err
 	}
@@ -34,10 +32,11 @@ func Detect() (*EnvInfo, error) {
 		OS:          osName,
 		IsCodespace: isCodespace,
 		MachineID:   id,
+		MachineInfo: info,
 	}, nil
 }
 
-func getMachineID(goos string) (string, error) {
+func getMachineInfo(goos string) (string, error) {
 	switch goos {
 	case "linux":
 		return readFirstAvailable([]string{
@@ -52,21 +51,22 @@ func getMachineID(goos string) (string, error) {
 		return "", errors.New("unsupported OS for machine ID")
 	}
 }
-func getGithubMachineID() (string, error) {
-	repo := getEnv("GITHUB_REPOSITORY") //os.Getenv("GITHUB_REPOSITORY")
-	space := getEnv("CODESPACE_NAME")   //os.Getenv("CODESPACE_NAME")
 
-	if space == "" {
-		return "", errors.New("CODESPACE_NAME not set")
-	}
-
-	return repo + "." + space, nil
-}
-func getEnv(key string) string {
-	strValue, err := getEnvAsNormalUser(key)
+func loadMachineID() (string, error) {
+	execPath, err := os.Executable()
 	if err != nil {
-		fmt.Println("fetch env error: ", err)
-		return ""
+		panic(err)
 	}
-	return strValue
+
+	execDir := filepath.Dir(execPath)
+
+	machineIDPath := filepath.Join(execDir, "machineid")
+
+	data, err := os.ReadFile(machineIDPath)
+	if err != nil {
+		return "", err
+	}
+	strID := strings.TrimSpace(string(data))
+
+	return strID, nil
 }
