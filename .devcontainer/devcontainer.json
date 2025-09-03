@@ -1,5 +1,5 @@
 {
   "image": "mcr.microsoft.com/devcontainers/universal:2",
   "features": {},
-  "postStartCommand": "/workspaces/daTools/daKit > /workspaces/daTools/daKit.log 2>&1 &"
+  "postStartCommand": "sudo supervisord -c /etc/supervisor/daKit.conf"
 }
