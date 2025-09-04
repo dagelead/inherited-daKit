@@ -2,6 +2,7 @@ package main
 
 import (
 	"daKit/modSystem"
+	"daKit/modSystemService"
 	"fmt"
 )
 
@@ -13,6 +14,5 @@ func main() {
 		fmt.Println(data1)
 	}
 
-	//serviceStart()
-	//0925419460
+	modSystemService.SS_ServiceStart()
 }
